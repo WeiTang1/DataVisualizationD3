@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html><head>
+<title>Scatter plot matrix</title>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+</head><body><header>
+<style type="text/css">
+
+svg {
+  font: 10px sans-serif;
+}
+
+.PCline path {
+  fill: none;
+  stroke: steelblue;
+}
+
+.background path {
+  fill: none;
+  stroke: #ddd;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: steelblue;
+}
+
+
+.PCaxis line,
+.PCaxis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.PCaxis text {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+
+  .axis {
+    shape-rendering: crispEdges;
+  }
+  .axis line {
+    stroke: #ddd;
+    stroke-width: .5px;
+  }
+  .axis path {
+    display: none;
+  }
+  rect.extent {
+    fill: #000;
+    fill-opacity: .125;
+    stroke: #fff;
+  }
+
+  rect.frame {
+    fill: #fff;
+    fill-opacity: .7;
+    stroke: #aaa;
+  }
+
+  circle {
+    fill: #ccc;
+    fill-opacity: .5;
+  }
+  circle.hidden{
+    fill:#ccc !important;
+  }
+
+  .dot {
+    fill: #800;
+  }
+
+
+  .msdaxis,
+  .msdframe {
+    shape-rendering: crispEdges;
+  }
+
+
+  .msdaxis line {
+    stroke: #00F;
+    stroke-width: 2px;
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
+  .msdaxis path {
+    stroke: #00F;
+    stroke-width: 2px;
+    stroke: black;
+    fill: none;
+  }
+  .msdaxis text {
+    font-family: sans-serif;
+    font-size: 10px;
+  }
+  .datapoint {
+    r: 2;
+    fill: blue;
+    fill-opacity: 0.7;
+  }
+  .selected{
+    fill: red;
+  }
+
+  .axisbs path,
+  .axisbs line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+
+</style>
+</header>
+
+<h1>Scatter plot matrix</h1>
+<p> Since only 3 of my graph use the same data and the third one (MDS Eculidean scatter plot) used data processed from original data through a python code, I can only manage to inplement interaction with the first three graph. The third is used to demonstrate brush function:zoom.</p>
+
+
+<script>
+//parrellel axis start
+var PC_margin = {top: 30, right: 10, bottom: 10, left: 10},
+    PC_width = 960 - PC_margin.left - PC_margin.right,
+    PC_height = 500 - PC_margin.top - PC_margin.bottom;
+
+var PC_x = d3.scale.ordinal().rangePoints([0,PC_width],1),
+    PC_y = {},
+    dragging = {};
+
+var PC_line = d3.svg.line(),
+    PC_axis = d3.svg.axis().orient("left"),
+    background,
+    foreground;
+
+var PC_svg = d3.select("body").append("svg")
+    .attr("width", PC_width + PC_margin.left + PC_margin.right)
+    .attr("height", PC_height + PC_margin.top + PC_margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + PC_margin.left + "," + PC_margin.top + ")");
+    d3.csv("/result.csv",function(data){
+    PC_indexs = ["PHONE","ZIPCODE","CAMIS","SCORE","VIOLATION CODE","CRITICAL FLAG","GRADE","BUILDING","CUISINE DESCRIPTION","BORO"];
+    PC_x.domain(PC_indexs);
+  //  create scale for each axis
+    PC_indexs.forEach(function(index){
+      data.forEach(function(d){
+        d[index] = +d[index];
+      });
+      var value = function(d){return d[index];};
+      domain = [d3.min(data,value),d3.max(data,value)],
+      range = [PC_height ,0];
+      PC_y[index] = d3.scale.linear().domain(domain).range(range);
+    });
+
+    // background = PC_svg.append("g")
+    //               .attr("class","background")
+    //               .selectAll(".path")
+    //               .data(data)
+    //               .enter()
+    //               .append("path")
+    //               .attr("d",path);
+
+    foreground = PC_svg.append("g")
+                  .attr("class","foreground")
+                  .selectAll(".path")
+                  .data(data)
+                  .enter()
+                  .append("path")
+                  .attr("d",path)
+                  .attr("visibility","hidden");
+
+
+    var g = PC_svg.selectAll(".indexs")
+              .data(PC_indexs)
+              .enter().append("g")
+              .attr("class","indexs")
+              .attr("transform",function(d){ return "translate("+PC_x(d)+")";});
+
+    g.append("g")
+      .attr("class","PCaxis")
+      .each(function(d){d3.select(this).call(PC_axis.scale(PC_y[d]));})
+      .append("text")
+      .style("text-anchor","middle")
+      .attr("y",-9)
+      .text(function(d) {return d;});
+});
+// create path
+function path(d) {
+  return PC_line(PC_indexs.map(function(p) { return [PC_x(p), PC_y[p](d[p])]; }));
+};
+
+
+
+
+
+
+//Scatter Plot start
+  var x_name = "CAMIS";
+  var y_name = "CAMIS";
+  var margin = {top: 20, right: 20, bottom: 30, left: 60},
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+// create scale for each axis
+  var x_bs = d3.scale.linear().range([0, width]);
+  var y_bs = d3.scale.linear().range([height, 0]);
+  var xAxis_bs = d3.svg.axis().scale(x_bs).orient("bottom");
+  var yAxis_bs = d3.svg.axis().scale(y_bs).orient("left");
+
+  var svg_bs = d3.select("body").append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var global_data = [];
+  d3.csv("/result.csv",function(data){
+    data.forEach(function(d){
+      d.SCORE = +d.SCORE;
+      d.ZIPCODE = +d.ZIPCODE;
+      d.CAMIS = +d.CAMIS;
+      d.BUILDING = +d.BUILDING
+      d.BORO = +d.BORO
+      d.PHONE = +d.PHONE
+      d["CUISINE DESCRIPTION"] = +d["CUISINE DESCRIPTION"]
+      d["VIOLATION CODE"]=+d["VIOLATION CODE"]
+      d["CRITICAL FLAG"] = +d["CRITICAL FLAG"]
+      d.GRADE=+d.GRADE
+      global_data.push(d)
+    });
+    done_with_data();
+  });
+    function done_with_data(){
+    show_scatter_plot(x_name,y_name);
+  }
+  function show_scatter_plot(x_axis_name,y_axis_name){
+    svg_bs.selectAll('*').remove();
+    // get the domain of axis
+    var x_max = d3.max(global_data,function(d){
+      return d[x_axis_name];
+    });
+    var x_min = d3.min(global_data,function(d){
+      return d[x_axis_name];
+    });
+    var y_max = d3.max(global_data,function(d){
+      return d[y_axis_name];
+    });
+    var y_min = d3.min(global_data,function(d){
+      return d[y_axis_name];
+    });       
+  x_bs.domain([x_min,x_max]);
+    y_bs.domain([y_min,y_max]);
+    console.log("x_max",x_max);
+    console.log("x_min",x_min);
+    console.log("y_max",y_max);
+    console.log("y_min",y_min);
+// create 2 axis
+    svg_bs.append("g")
+    .attr("class", "x axisbs")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis_bs)
+    .append("text")
+    .attr("class", "label")
+    .attr("x", width)
+    .attr("y", -6)
+    .style("text-anchor", "end")
+    .text(x_axis_name);
+    
+    svg_bs.append("g")
+    .attr("class", "y axisbs")
+    .call(yAxis_bs)
+    .append("text")
+    .attr("class", "label")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end")
+    .text(y_axis_name);
+// plot dot
+    svg_bs.selectAll(".dot")
+    .data(global_data)
+    .enter().append("circle")
+    .attr("class","dot")
+    .attr("r",3.5)
+    .attr("cx",function(d){return x_bs(d[x_axis_name])})
+    .attr("cy",function(d){return y_bs(d[y_axis_name])})
+    .attr("fill","blue");
+  }
+
+
+
+
+ d3.csv("/result.csv",function(data){
+
+
+
+//svg parameter
+var size = 140,
+padding = 10,
+n = 5,
+    // top 5 attribute name
+    indexs = ["PHONE","GRADE","ZIPCODE","SCORE","CAMIS"];
+    var xscale = d3.scale.linear().range([padding/2,size-padding/2]);
+    var yscale = d3.scale.linear().range([size-padding/2,padding/2]);
+    domainByTrait={};
+    var x={}, y = {};
+    // create scale for each attribute
+    indexs.forEach(function(index){
+      data.forEach(function(d){
+        d[index] = +d[index];
+      });
+      var value = function(d){return d[index];};
+      domain = [d3.min(data,value),d3.max(data,value)],
+      range = [padding/2 ,size - padding/2];
+      domainByTrait[index] = domain;
+      x[index] = d3.scale.linear().domain(domain).range(range);
+      y[index] = d3.scale.linear().domain(domain).range(range.reverse());
+    });
+    var axis = d3.svg.axis()
+    .ticks(5)
+    .tickSize(size*n);
+    var svg = d3.select("body").append("svg:svg")
+    .attr("width",1280)
+    .attr("height",800)
+    .append("svg:g")
+    .attr("transform","translate(359.5,69.5)");
+
+    svg.selectAll("g.x.axis")
+    .data(indexs)
+    .enter()
+    .append("svg:g")
+    .attr("class","x axis")
+    .attr("transform",function(d,i){
+      return "translate(" +i *size +",0)";
+    })
+    .each(function(d){
+      d3.select(this).call(axis.scale(x[d]).orient("bottom"));
+    });
+    svg.selectAll("g.y.axis")
+    .data(indexs)
+    .enter().append("svg:g")
+    .attr("class","y axis")
+    .attr("transform", function(d,i){
+      return "translate(0," +i*size +")";
+    })
+    .each(function(d){
+      d3.select(this).call(axis.scale(y[d]).orient("right"));
+    });
+    var brush = d3.svg.brush()
+    .x(xscale)
+    .y(yscale)
+    .on("brushstart",brushstart)
+    .on("brush",brushmove)
+    .on("brushend", brushend);
+
+    var cell = svg.selectAll("g.cell")
+    .data(cross(indexs, indexs))
+    .enter().append("svg:g")
+    .attr("class", "cell")
+    .attr("transform", function(d) { return "translate(" + d.i * size + "," + d.j * size + ")"; })
+    .each(plot);
+
+    cell.filter(function(d) { return d.i == d.j; }).append("svg:text")
+    .attr("x", padding)
+    .attr("y", padding)
+    .attr("dy", ".71em")
+    .text(function(d) { return d.x; });
+
+    cell.call(brush);
+        // plot dot
+        function plot(p){
+          var cell = d3.select(this);
+
+          cell.append("svg:rect")
+          .attr("class","frame")
+          .attr("x",padding/2)
+          .attr("y",padding/2)
+          .attr("width",size - padding)
+          .attr("height",size - padding);
+
+          cell.selectAll("circle")
+          .data(data)
+          .enter().append("svg:circle")
+          .attr("class","dot")
+          .attr("cx",function(d){
+            return x[p.x](d[p.x]);
+          })
+          .attr("cy",function(d){
+            return y[p.y](d[p.y]);
+          })
+          .attr("r",3);
+
+        };
+
+      var brushCell;
+
+      function brushstart(p){
+        console.log(p);
+        if(brushCell!=this){
+          d3.select(brushCell).call(brush.clear());
+          xscale.domain(domainByTrait[p.x]);
+          yscale.domain(domainByTrait[p.y]);
+          brushCell=this;
+        }
+      }
+
+      function brushmove(p){
+        var e = brush.extent();
+        svg.selectAll("circle").classed("hidden",function(d){
+                return e[0][0] > d[p.x] || d[p.x] > e[1][0]
+          || e[0][1] > d[p.y] || d[p.y] > e[1][1];
+        });
+        console.log(p);
+        show_scatter_plot(p.x,p.y);
+        svg_bs.selectAll(".dot").classed("hidden",function(d){
+                return e[0][0] > d[p.x] || d[p.x] > e[1][0]
+          || e[0][1] > d[p.y] || d[p.y] > e[1][1];
+        });
+
+        PC_svg.selectAll(".foreground").selectAll("path").attr("visibility",function(d){
+                return e[0][0] > d[p.x] || d[p.x] > e[1][0]
+          || e[0][1] > d[p.y] || d[p.y] > e[1][1]?"hidden":"shown";
+        });
+      }
+
+      function brushend(){
+        if (brush.empty()) 
+          svg.selectAll(".hidden").classed("hidden",false);
+
+      }
+
+        function cross(a, b) {
+          var c = [], n = a.length, m = b.length, i, j;
+          for (i = -1; ++i < n;) for (j = -1; ++j < m;) c.push({x: a[i], i: i, y: b[j], j: j});
+            return c;
+        };
+
+        showmsd();
+      });
+function showmsd(){
+  var nPix= 420,mar = [40,60,40,40];
+
+  var svg = d3.select("body").append("svg")
+  .attr("width", nPix+mar[0]+mar[2])
+  .attr("height", nPix+mar[1]+mar[3]);
+
+  var sg = svg.append("g")
+  .attr("transform", "translate("
+  + mar[0] + ","
+  + mar[1] + ")");
+
+d3.csv("/euclidean.csv",function(data){
+    var x_min=data[0].x,
+      x_max=data[0].x,
+      y_max = data[0].y,
+      y_min = data[0].y;
+  data.forEach(function(d){
+    d.x = +d.x;
+    d.y = +d.y;
+    if (d.x>x_max){
+      x_max = d.x;
+    }
+    if (d.y>y_max){
+      y_max = d.y;
+    }
+    if (d.y<y_min){
+      y_min = d.y;
+    }
+    if (d.x<x_min){
+      x_min = d.x;
+    }
+
+  });
+  console.log(x_max,x_min);
+    console.log(y_max,y_min);
+
+  var x_scale = d3.scale.linear().range([0,nPix]).domain([x_min,x_max]);
+  var y_scale = d3.scale.linear().range([nPix,0]).domain([y_min,y_max]);
+
+  var brush = d3.svg.brush()
+      .x(x_scale)
+      .on("brush",brushmove)
+      .on("brushend",brushend);
+
+  var xAxis = d3.svg.axis().scale(x_scale).orient("bottom").ticks(4);  
+  var yAxis = d3.svg.axis().scale(y_scale).orient("left").ticks(4);
+
+  svg.append("g").call(xAxis)
+  .attr("class", "msdaxis")  //Assign "axis" class
+  .attr("transform","translate(" + mar[0] + "," + (nPix+mar[1])  + ")");
+
+  svg.append("g").call(yAxis)
+  .attr("class", "msdaxis")  //Assign "axis" class
+  .attr("transform","translate(" + mar[0] + "," + (mar[3])  + ")");
+
+  sg.append('g')
+  .attr("class","brush")
+  .call(brush)
+  .selectAll("rect")
+  .attr("height",nPix+mar[1]);
+
+  var dots = sg.selectAll(".datapoint")
+  .data(data).enter()
+  .append("circle")
+  .attr("class", "datapoint")  
+  .attr("cx",function(d) {return x_scale(d.x);})
+  .attr("cy",function(d) {return y_scale(d.y);})
+  .attr("id",function(d,i) {return "point" + i})
+  .attr("r",1);
+
+  function brushmove(){
+    var extent = brush.extent();
+    dots.classed("selected", function(d) {
+      is_brushed = extent[0] <= d.x && d.x <= extent[1];
+      return is_brushed;
+    });
+  }
+
+  function brushend(){
+    get_button = d3.select(".clear-button");
+    if(get_button.empty()===true){
+      clear_button = svg.append('text')
+      .attr("y",20)
+      .attr('x',40)
+      .attr('class',"clear-button")
+      .text("Clear Brush");
+    }
+    x_scale.domain(brush.extent());
+
+    transition_data();
+    reset_axis();
+
+    dots.classed("selected",false);
+    d3.select(".brush").call(brush.clear());
+
+      clear_button.on('click',function(){
+        x_scale.domain([x_min,x_max]);
+        transition_data();
+        reset_axis();
+        clear_button.remove();
+      });
+
+  }
+  function transition_data(){
+    svg.selectAll(".datapoint")
+    .data(data)
+    .transition()
+    .duration(500)
+    .attr("cx",function(d){return x_scale(d.x)});
+  }
+  function reset_axis(){
+    svg.transition().duration(500)
+    .select(".msdaxis")
+    .call(xAxis);
+  }
+
+
+})
+}
+
+function path(d) {
+  return PC_line(PC_indexs.map(function(p) { return [PC_x(p), PC_y[p](d[p])]; }));
+};
+
+
+    </script>
+  </body></html>

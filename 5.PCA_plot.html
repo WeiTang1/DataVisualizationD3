@@ -1,0 +1,266 @@
+<!DOCTYPE html> <html lang="en">
+<style>
+  body {
+    font: 10px sans-serif;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+  .bar {
+  fill: orange;
+}
+  .dot {
+    stroke: #000;
+  }
+</style>
+<head>
+  <meta charset="utf-8">
+  <title>PCA</title>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+</head> <body>
+<script type="text/javascript">
+  // 2 PC
+  var x_name = "CAMIS"
+  var y_name = "BORO"
+  var margin = {top: 20, right: 20, bottom: 30, left: 60},
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+// scales
+  var x = d3.scale.linear().range([0, width]);
+
+  var y = d3.scale.linear().range([height, 0]);
+  var color = d3.scale.category10();
+
+  var xAxis = d3.svg.axis()
+  .scale(x)
+  .orient("bottom");
+
+  var yAxis = d3.svg.axis()
+  .scale(y)
+  .orient("left");
+// 3 svg for each plot
+  var svg1 = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  var svg2 = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var svg3 = d3.select("body").append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  // eig value for bar chart
+  var eig_val = [  0.005159,0.004942,0.003045,0.002277,0.002007,0.000853,0.000382,0.000129,0.000037,0.000006];
+
+  var global_data = [];
+  d3.csv("/result3.csv",function(data){
+    data.forEach(function(d){
+      d.SCORE = +d.SCORE;
+      d.ZIPCODE = +d.ZIPCODE;
+      d.CAMIS = +d.CAMIS;
+      d.BUILDING = +d.BUILDING
+      d.BORO = +d.BORO
+      d.PHONE = +d.PHONE
+      d["CUISINE DESCRIPTION"] = +d["CUISINE DESCRIPTION"]
+      d["VIOLATION CODE"]=+d["VIOLATION CODE"]
+      d["CRITICAL FLAG"] = +d["CRITICAL FLAG"]
+      d.GRADE=+d.GRADE
+      global_data.push(d)
+    });
+    done_with_data();
+    load_PCA_data();
+  });
+  function load_PCA_data(){
+    global_data = [];
+    d3.csv("/result2.csv",function(data){
+      data.forEach(function(d){
+        d.SCORE = +d.SCORE;
+        d.ZIPCODE = +d.ZIPCODE;
+        d.CAMIS = +d.CAMIS;
+        d.BUILDING = +d.BUILDING
+        d.BORO = +d.BORO
+        d.PHONE = +d.PHONE
+        d["CUISINE DESCRIPTION"] = +d["CUISINE DESCRIPTION"]
+        d["VIOLATION CODE"]=+d["VIOLATION CODE"]
+        d["CRITICAL FLAG"] = +d["CRITICAL FLAG"]
+        d.GRADE=+d.GRADE
+        global_data.push(d)
+      });
+      show_scatter_plot("CAMIS","BORO",svg2);
+    });
+  }
+
+  function done_with_data(){
+    show_scatter_plot(x_name,y_name,svg1);
+    show_PCA();
+  }
+  function show_scatter_plot(x_axis_name,y_axis_name,this_svg){
+    svg = this_svg;
+    var x_max = d3.max(global_data,function(d){
+      return d[x_axis_name];
+    });
+    var x_min = d3.min(global_data,function(d){
+      return d[x_axis_name];
+    });
+    var y_max = d3.max(global_data,function(d){
+      return d[y_axis_name];
+    });
+    var y_min = d3.min(global_data,function(d){
+      return d[y_axis_name];
+    });       
+    x.domain([x_min,x_max]);
+    y.domain([y_min,y_max]);
+    console.log("x_max",x_max);
+    console.log("x_min",x_min);
+    console.log("y_max",y_max);
+    console.log("y_min",y_min);
+    
+    svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis)
+    .append("text")
+    .attr("class", "label")
+    .attr("x", width)
+    .attr("y", -6)
+    .style("text-anchor", "end")
+    .text(x_axis_name);
+
+    svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+    .append("text")
+    .attr("class", "label")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end")
+    .text(y_axis_name);
+
+    svg.selectAll(".dot")
+    .data(global_data)
+    .enter().append("circle")
+    .attr("class","dot")
+    .attr("r",3.5)
+    .attr("cx",function(d){return x(d[x_axis_name])})
+    .attr("cy",function(d){return y(d[y_axis_name])})
+    .attr("fill","blue");
+
+
+
+
+  }
+  function show_PCA(){
+    svg=svg1;
+    svg.append("circle")
+    .attr("class","dot")
+    .attr("r",10)
+    .attr("cx",function(d){return x(0.07979035)})
+    .attr("cy",function(d){return y(0.055)})
+    .attr("fill","red");
+
+// PC1
+svg.append("line")
+.attr("x1", x(0.07979035))
+.attr("y1", y(0.055))
+.attr("x2", x(55.1224))
+.attr("y2", y(364.77))
+.attr("stroke-width", 2)
+.attr("stroke", "black")
+.style("stroke-dasharray",("3,3"));
+
+//PC2
+svg.append("line")
+.attr("x1", x(0.07979035))
+.attr("y1", y(0.055))
+.attr("x2", x(-6.1925))
+.attr("y2", y(559.836))
+.attr("stroke-width", 2)
+.attr("stroke", "black")
+.style("stroke-dasharray",("3,3"));
+
+svg.append("text")
+.attr("x",x(0.07979035)+40)
+.attr('y',y(0.055)+10)
+.attr('text-anchor',"middle")
+.text("PC2");
+
+svg.append("text")
+.attr("x",x(0.07979035)-20)
+.attr('y',y(0.055)-30)
+.attr('text-anchor',"middle")
+.text("PC1");
+
+svg1.append("text")
+.attr("x",width/2)
+.attr('y',10)
+.attr("text-anchor",'middle')
+.text("BEFORE PCA");
+
+svg2.append("text")
+.attr("x",width/2)
+.attr('y',10)
+.attr("text-anchor",'middle')
+.text("AFTER PCA ROTATION");
+
+}
+
+// bar chart
+var inde = ['CAMIS','BORO',"BUILDING","ZIPCODE",'PHONE','CUISINE DESCRIPTION','VIOLATION CODE','CRITICAL FLAG','SCORE','GRADE'];
+var x_eig = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .2)
+    .domain(['CAMIS','BORO',"BUILDING","ZIPCODE",'PHONE','CUISINE DESCRIPTION','VIOLATION CODE','CRITICAL FLAG','SCORE','GRADE']);
+
+var y_eig = d3.scale.linear()
+    .range([height, 0])
+    .domain([d3.min(eig_val),d3.max(eig_val)]);
+var formatPercent = d3.format(".0%");
+
+var xAxis_eig = d3.svg.axis()
+    .scale(x_eig)
+    .orient("bottom");
+
+var yAxis_eig = d3.svg.axis()
+    .scale(y_eig)
+    .orient("left")
+
+  svg3.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis_eig);
+
+  svg3.append("g")
+      .attr("class", "y axis")
+      .call(yAxis_eig)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Eigen Value");
+
+
+  svg3.selectAll(".bar")
+    .data(eig_val)
+    .enter()
+    .append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d,i) { return x_eig(inde[i]); })
+      .attr("width", x_eig.rangeBand())
+      .attr("y", function(d) { return y_eig(d); })
+      .attr("height", function(d) { return height - y_eig(d); });
+
+
+
+</script> </body>
+</html>

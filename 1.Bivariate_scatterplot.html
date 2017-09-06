@@ -1,0 +1,157 @@
+<!DOCTYPE html> <html lang="en">
+<style>
+  body {
+    font: 10px sans-serif;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+  circle {
+    fill: #ccc;
+    fill-opacity: .1;
+  }
+
+  .dot {
+    fill: #800;
+  }
+</style>
+<head>
+  <meta charset="utf-8">
+  <title>Bivariate scatterplot</title>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+</head> <body>
+<!-- radio button -->
+<p>Choose X </p>
+<input type="radio" name="X"  value="CAMIS" onclick="on_radio_change(this)"  checked>CAMIS
+<input type="radio" name="X"  value="BORO" onclick="on_radio_change(this)"  >BORO
+<input type="radio" name="X"  value="BUILDING" onclick="on_radio_change(this)">BUILDING
+<input type="radio" name="X"  value="SCORE" onclick="on_radio_change(this)">SCORE
+<input type="radio" name="X"  value="GRADE" onclick="on_radio_change(this)">GRADE
+<input type="radio" name="X"  value="ZIPCODE" onclick="on_radio_change(this)">ZIPCODE
+<input type="radio" name="X"  value="PHONE" onclick="on_radio_change(this)">PHONE
+<input type="radio" name="X"  value="CUISINE DESCRIPTION" onclick="on_radio_change(this)">CUISINE_DESCRIPTION
+<input type="radio" name="X"  value="VIOLATION CODE" onclick="on_radio_change(this)">VIOLATION CODE
+<input type="radio" name="X"  value="CRITICAL FLAG" onclick="on_radio_change(this)">CRITICAL FLAG
+<br>
+<p>Choose Y </p>
+<input type="radio" name="Y"  value="CAMIS" onclick="on_radio_changeY(this)"  checked>CAMIS
+<input type="radio" name="Y"  value="BORO" onclick="on_radio_changeY(this)"  >BORO
+<input type="radio" name="Y"  value="BUILDING" onclick="on_radio_changeY(this)">BUILDING
+<input type="radio" name="Y"  value="SCORE" onclick="on_radio_changeY(this)">SCORE
+<input type="radio" name="Y"  value="GRADE" onclick="on_radio_changeY(this)">GRADE
+<input type="radio" name="Y"  value="ZIPCODE" onclick="on_radio_changeY(this)">ZIPCODE
+<input type="radio" name="Y"  value="PHONE" onclick="on_radio_changeY(this)">PHONE
+<input type="radio" name="Y"  value="CUISINE DESCRIPTION" onclick="on_radio_changeY(this)">CUISINE_DESCRIPTION
+<input type="radio" name="Y"  value="VIOLATION CODE" onclick="on_radio_changeY(this)">VIOLATION CODE
+<input type="radio" name="Y"  value="CRITICAL FLAG" onclick="on_radio_changeY(this)">CRITICAL FLAG
+<br>
+
+<script type="text/javascript">
+// default axies
+  var x_name = "CAMIS";
+  var y_name = "CAMIS";
+  var margin = {top: 20, right: 20, bottom: 30, left: 60},
+  width = 960 - margin.left - margin.right,
+  height = 500 - margin.top - margin.bottom;
+// create scale for each axis
+  var x = d3.scale.linear().range([0, width]);
+  var y = d3.scale.linear().range([height, 0]);
+  var xAxis = d3.svg.axis().scale(x).orient("bottom");
+  var yAxis = d3.svg.axis().scale(y).orient("left");
+// svg
+  var svg = d3.select("body").append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // load data
+  var global_data = [];
+  d3.csv("/test.csv",function(data){
+    data.forEach(function(d){
+      d.SCORE = +d.SCORE;
+      d.ZIPCODE = +d.ZIPCODE;
+      d.CAMIS = +d.CAMIS;
+      d.BUILDING = +d.BUILDING
+      d.BORO = +d.BORO
+      d.PHONE = +d.PHONE
+      d["CUISINE DESCRIPTION"] = +d["CUISINE DESCRIPTION"]
+      d["VIOLATION CODE"]=+d["VIOLATION CODE"]
+      d["CRITICAL FLAG"] = +d["CRITICAL FLAG"]
+      d.GRADE=+d.GRADE
+      global_data.push(d)
+    });
+    done_with_data();
+  });
+  function done_with_data(){
+    console.log(global_data[0]["CUISINE DESCRIPTION"]);
+    show_scatter_plot(x_name,y_name);
+  }
+  function on_radio_change(myRadio){
+    x_name = myRadio.value;
+    show_scatter_plot(x_name,y_name);
+  }
+  function on_radio_changeY(myRadio){
+    y_name = myRadio.value;
+    show_scatter_plot(x_name,y_name);
+  }
+  function show_scatter_plot(x_axis_name,y_axis_name){
+    svg.selectAll('*').remove();
+    // get the domain of axis
+    var x_max = d3.max(global_data,function(d){
+      return d[x_axis_name];
+    });
+    var x_min = d3.min(global_data,function(d){
+      return d[x_axis_name];
+    });
+    var y_max = d3.max(global_data,function(d){
+      return d[y_axis_name];
+    });
+    var y_min = d3.min(global_data,function(d){
+      return d[y_axis_name];
+    });       
+    x.domain([x_min,x_max]);
+    y.domain([y_min,y_max]);
+    console.log("x_max",x_max);
+    console.log("x_min",x_min);
+    console.log("y_max",y_max);
+    console.log("y_min",y_min);
+// create 2 axis
+    svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis)
+    .append("text")
+    .attr("class", "label")
+    .attr("x", width)
+    .attr("y", -6)
+    .style("text-anchor", "end")
+    .text(x_axis_name);
+    
+    svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+    .append("text")
+    .attr("class", "label")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end")
+    .text(y_axis_name);
+// plot dot
+    svg.selectAll("circle")
+    .data(global_data)
+    .enter().append("circle")
+    .attr("class","dot")
+    .attr("r",3.5)
+    .attr("cx",function(d){return x(d[x_axis_name])})
+    .attr("cy",function(d){return y(d[y_axis_name])})
+    .attr("fill","blue");
+  }
+
+</script> </body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html> <html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>D3 Page </title>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+  <p id = "processing"> Processing data ...</p>
+  <p id = "cycle"  > Click here to cycle data </p>
+  <script type="text/javascript">
+  var w = 500;
+  var h = 300;
+  var padding = 1;
+  var global_data=[];
+  var svg = d3.select("body")
+  .append("svg")
+  .attr("width",w)
+  .attr("height",h);
+
+  d3.csv("/result.csv",function(data){
+    data.forEach(function(d){
+      d.SCORE = +d.SCORE;
+      d.ZIPCODE = +d.ZIPCODE;
+      d.CAMIS = +d.CAMIS;
+      if (!isNaN(d.BUILDING)){
+        d.BUILDING = +d.BUILDING;
+      }
+      else{
+        d.BUILDING = 10;
+      }
+      if (!isNaN(d.PHONE)){
+        d.PHONE = +d.PHONE;
+      }
+      else{
+        d.PHONE = 10;
+      }
+      d["CUISINE DESCRIPTION"] = d["CUISINE DESCRIPTION"].trim()
+    });
+    showdata(data,"SCORE");
+    binddata(data);
+  });
+  function binddata(data){
+    global_data = data;
+  }
+  function showdata(data,index){
+    var dataset = extractdata(data,index);
+    showtitle("SCORE");
+    // var cuisine_array = CuisineType(data);
+    // var score_array = score_data(data);
+    svg.selectAll("rect")
+    .data(dataset)
+    .enter()
+    .append("rect")
+    .attr("x",function(d,i){
+      return i * (w/dataset.length);
+    })
+    .attr("y",function(d){
+      if(d[1]==0) return 0;
+
+      return h-Math.log(d[1])*15;
+    })
+    .attr("width",w/dataset.length-padding)
+    .attr("height",function(d){
+      if(d[1]==0) return 0;
+
+      var barHeight = Math.log(d[1])*15;
+      return barHeight;
+    })
+    .attr("index",function(d,i){
+      return i;
+    })
+    .attr("fill",function(d){
+      return "rgb(0, 0, " + parseInt(Math.log(d[1]) * 10) + ")";;
+    })
+    .attr("data",function(d){
+      return d[1];
+    })
+    .on("mouseover",function(d){
+      var bar = d3.select(this);
+      var previous_bar = d3.select(this.previousSibling)
+      var next_bar = d3.select(this.nextSibling);
+      if(bar.attr("index")==0){
+        bar.attr("width",parseInt(bar.attr("width"))+5);
+        next_bar.attr("x",parseInt(next_bar.attr("x"))+5);
+        next_bar.attr("width",parseInt(next_bar.attr("width"))-5);
+        bar.attr("height",paresInt(bar.attr("height"))+10);
+        bar.attr("y",parseInt(bar.attr("y"))-10);
+      }
+      else if(bar.attr("index")==9){
+        previous_bar.attr("width",parseInt(previous_bar.attr("width"))-5);
+        bar.attr("x",parseInt(bar.attr("x"))-5);
+        bar.attr("width",parseInt(bar.attr("width"))+5);
+        bar.attr("height",parseInt(bar.attr("height"))+10);
+        bar.attr("y",parseInt(bar.attr("y"))-10);
+      }
+      else{
+        bar.attr("width",parseInt(bar.attr("width"))+10);
+        next_bar.attr("x",parseInt(next_bar.attr("x"))+5);
+        previous_bar.attr("width",parseInt(next_bar.attr("width"))-5);
+        bar.attr("x",parseInt(bar.attr("x"))-5);
+        next_bar.attr("width",parseInt(next_bar.attr("width"))-5);
+        bar.attr("height",parseInt(bar.attr("height"))+10);
+        bar.attr("y",parseInt(bar.attr("y"))-10);
+      }
+
+    })
+    // .attr("onmouseover","showColumn(this)")
+    // .attr("onmouseleave","deleteColumntext()")
+    .on("mouseleave",function(d){
+      var bar = d3.select(this);
+      var previous_bar = d3.select(this.previousSibling)
+      var next_bar = d3.select(this.nextSibling);
+
+    });
+
+
+    document.getElementById('processing').remove();
+  };
+
+  d3.select('#cycle')
+    .on("click",function(){
+      var dataset = extractdata(global_data,"ZIPCODE")
+      svg.selectAll("rect")
+      .data(dataset)
+      .transition()
+      .attr("x",function(d,i){
+        return i * (w/dataset.length) - padding;
+      })
+      .attr("y",function(d){
+        if(d[1]==0) return 0;
+        return h-Math.log(d[1])*15-50;
+      })
+      .attr("width",20)
+      .attr("height",function(d){
+        if(d[1]==0) return 0;
+        var barHeight = Math.log(d[1])*15;
+        return barHeight;
+      })
+      .attr("fill",function(d){
+        return "rgb(0, 0, " + parseInt(Math.log(d[1]) * 10) + ")";;
+      })
+      .attr("data",function(d){
+        return d[1];
+      })
+      .attr("toggled",false)
+      .on("mouseover",function(d){
+        svg.append("text")
+        .text(d3.select(this).attr("data"))
+        .attr("x",d3.select(this).attr("x"))
+        .attr("y",d3.select(this).attr("y"))
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "11px")
+        .attr("class","column_text");
+
+      })
+      .on("mouseleave",function(e){
+        svg.selectAll(".column_text").remove();
+      })
+
+
+
+
+    });
+  function showtitle(title){
+    svg.append("text")
+        .text(title)
+        .attr("x",w/2)
+        .attr("y",20)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "20px")
+  }
+  function showColumn(d){
+    var param = d;
+    svg.append("text")
+    .text(param.getAttribute("data"))
+    .attr("x",param.getAttribute("x"))
+    .attr("y",param.getAttribute("y"))
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "11px")
+    .attr("class","column_text");
+  };
+
+  // function deleteColumntext(){
+
+  // };
+
+
+  function extractdata(data,index){
+    var extracted_data = [];
+    var max = data[0][index];
+    var min = data[0][index];
+    var frequency = [0,0,0,0,0,0,0,0,0,0];
+    var interval = [];
+    var increment = 0;
+    data.forEach(function(d){
+      if (d[index]>max){
+        max = d[index];
+      }
+      if (d[index]<min){
+        min = d[index];
+      }
+    });
+    interval.push(min);
+    increment = Math.round((max-min)/10);
+    for (i=0;i<9;i++){
+      var celling = interval[i]+increment;
+      interval.push(celling);
+    }
+    interval.push(max);
+
+    data.forEach(function(d){
+      if(interval[0]<=d[index]&& d[index]<interval[1]){
+        frequency[0]+=1;
+      }
+      else if(interval[1]<=d[index]&& d[index]<interval[2]){
+        frequency[1]+=1;
+      }
+      if(interval[2]<=d[index]&& d[index]<interval[3]){
+        frequency[2]+=1;
+      }
+      if(interval[3]<=d[index]&& d[index]<interval[4]){
+        frequency[3]+=1;
+      }
+      if(interval[4]<=d[index]&& d[index]<interval[5]){
+        frequency[4]+=1;
+      }
+      if(interval[5]<=d[index]&& d[index]<interval[6]){
+        frequency[5]+=1;
+      }
+      if(interval[6]<=d[index]&& d[index]<interval[7]){
+        frequency[6]+=1;
+      }
+      if(interval[7]<=d[index]&& d[index]<interval[8]){
+        frequency[7]+=1;
+      }
+      if(interval[8]<=d[index]&& d[index]<interval[9]){
+        frequency[8]+=1;
+      }
+      if(interval[9]<=d[index]&& d[index]<=interval[10]){
+        frequency[9]+=1;
+      }
+    });
+
+    for (i=0;i<10;i++){
+      var entry = [];
+      var interval_string = interval[i].toString() + " ~ " + interval[i+1].toString();
+      entry.push(interval_string);
+      entry.push(frequency[i]);
+      extracted_data.push(entry);
+    }
+    return extracted_data;
+
+
+
+  };
+
+  //
+  // function CuisineType(data){
+  //   var cuisine_array = [];
+  //   data.forEach(function(d){
+  //     var cuisine_name = d["CUISINE DESCRIPTION"];
+  //     if(cuisine_array.indexOf(cuisine_name)<0){
+  //       cuisine_array.push(cuisine_name);
+  //     }
+  //   });
+  //   return cuisine_array;
+  // };
+  //
+  // function score_data(data){
+  //   var score_array = [0,0,0,0,0,0,0,0,0,0,0];
+  //   data.forEach(function(d){
+  //     if (12>d.SCORE && d.SCORE>=-2){
+  //       score_array[0]=score_array[0]+1;
+  //     }
+  //     else if (26>d.SCORE && d.SCORE>=12){
+  //       score_array[1]+=1;
+  //     }
+  //     else if(40>d.SCORE && d.SCORE>=26){
+  //       score_array[2]+=1;
+  //     }
+  //     else if(54>d.SCORE && d.SCORE>=40){
+  //       score_array[3]+=1;
+  //     }
+  //     else if(68>d.SCORE && d.SCORE>=54){
+  //       score_array[4]+=1;
+  //     }
+  //     else if(82>d.SCORE && d.SCORE>=68){
+  //       score_array[5]+=1;
+  //     }
+  //     else if(96>d.SCORE && d.SCORE>=82){
+  //       score_array[6]+=1;
+  //     }
+  //     else if(110>d.SCORE && d.SCORE>=96){
+  //       score_array[7]+=1;
+  //     }
+  //     else if(124>d.SCORE && d.SCORE>=110){
+  //       score_array[8]+=1;
+  //     }
+  //     else if(138>d.SCORE && d.SCORE>=124){
+  //       score_array[9]+=1;
+  //     }
+  //     else if(156>=d.SCORE && d.SCORE>=138){
+  //       score_array[10]+=1;
+  //     }
+  //
+  //   });
+  // };
+
+
+
+
+  </script>
+</body>
+
+
+
+
+</html>

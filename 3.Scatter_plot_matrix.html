@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html><head>
+<title>Scatter plot matrix</title>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+</head><body><header>
+<style type="text/css">
+  svg {
+    font-size: 14px;
+  }
+  .axis {
+    shape-rendering: crispEdges;
+  }
+  .axis line {
+    stroke: #ddd;
+    stroke-width: .5px;
+  }
+  .axis path {
+    display: none;
+  }
+  rect.extent {
+    fill: #000;
+    fill-opacity: .125;
+    stroke: #fff;
+  }
+
+  rect.frame {
+    fill: #fff;
+    fill-opacity: .7;
+    stroke: #aaa;
+  }
+
+  circle {
+    fill: #ccc;
+    fill-opacity: .5;
+  }
+
+  .dot {
+    fill: #800;
+  }
+
+
+</style>
+</header>
+
+<h1>Scatter plot matrix</h1>
+
+<script>
+  d3.csv("/result.csv",function(data){
+// svg parameter
+    var size = 140,
+    padding = 10,
+    n = 5,
+    // top 5 attribute name
+    indexs = ["PHONE","GRADE","ZIPCODE","SCORE","CAMIS"];
+    var x={}, y = {};
+    // create scale for each attribute
+    indexs.forEach(function(index){
+      data.forEach(function(d){
+        d[index] = +d[index];
+      });
+      var value = function(d){return d[index];};
+      domain = [d3.min(data,value),d3.max(data,value)],
+      range = [padding/2 ,size - padding/2];
+      x[index] = d3.scale.linear().domain(domain).range(range);
+      y[index] = d3.scale.linear().domain(domain).range(range.reverse());
+    });
+    // initialize axis
+        var axis = d3.svg.axis()
+        .ticks(5)
+        .tickSize(size*n);
+        var svg = d3.select("body").append("svg:svg")
+        .attr("width",1280)
+        .attr("height",800)
+        .append("svg:g")
+        .attr("transform","translate(359.5,69.5)");
+        svg.selectAll("g.x.axis")
+        .data(indexs)
+        .enter()
+        .append("svg:g")
+        .attr("class","x axis")
+        .attr("transform",function(d,i){
+          return "translate(" +i *size +",0)";
+        })
+        .each(function(d){
+          d3.select(this).call(axis.scale(x[d]).orient("bottom"));
+        });
+        svg.selectAll("g.y.axis")
+        .data(indexs)
+        .enter().append("svg:g")
+        .attr("class","y axis")
+        .attr("transform", function(d,i){
+          return "translate(0," +i*size +")";
+        })
+        .each(function(d){
+          d3.select(this).call(axis.scale(y[d]).orient("right"));
+        });
+        var cell = svg.selectAll("g.cell")
+        .data(cross(indexs, indexs))
+        .enter().append("svg:g")
+        .attr("class", "cell")
+        .attr("transform", function(d) { return "translate(" + d.i * size + "," + d.j * size + ")"; })
+        .each(plot);
+
+        cell.filter(function(d) { return d.i == d.j; }).append("svg:text")
+        .attr("x", padding)
+        .attr("y", padding)
+        .attr("dy", ".71em")
+        .text(function(d) { return d.x; });
+        // plot dot
+        function plot(p){
+          var cell = d3.select(this);
+          cell.append("svg:rect")
+          .attr("class","frame")
+          .attr("x",padding/2)
+          .attr("y",padding/2)
+          .attr("width",size - padding)
+          .attr("height",size - padding);
+
+          cell.selectAll("circle")
+          .data(data)
+          .enter().append("svg:circle")
+          .attr("class","dot")
+          .attr("cx",function(d){
+            return x[p.x](d[p.x]);
+          })
+          .attr("cy",function(d){
+            return y[p.y](d[p.y]);
+          })
+          .attr("r",3);
+
+        };
+
+        function cross(a, b) {
+          var c = [], n = a.length, m = b.length, i, j;
+          for (i = -1; ++i < n;) for (j = -1; ++j < m;) c.push({x: a[i], i: i, y: b[j], j: j});
+            return c;
+        };
+
+      });
+    </script>
+</body></html>

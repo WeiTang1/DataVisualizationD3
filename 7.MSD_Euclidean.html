@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html><head>
+<title>MSD Euclidian</title>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+</head><body><header>
+<style>
+    .axis,
+    .frame {
+    shape-rendering: crispEdges;
+    }
+    
+    
+    .axis line {
+    stroke: #00F;
+    stroke-width: 2px;
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+    }
+    .axis path {
+    stroke: #00F;
+    stroke-width: 2px;
+    stroke: black;
+    fill: none;
+    }
+    .axis text {
+    font-family: sans-serif;
+    font-size: 10px;
+    }
+    .datapoint {
+    r: 2;
+    fill: blue;
+    fill-opacity: 0.7;
+    }
+</style>
+</header>
+
+<h1>MSD Euclidian</h1>
+
+<script>
+
+  var nPix= 420,mar = [40,60,40,40];
+
+  var svg = d3.select("body").append("svg")
+  .attr("width", nPix+mar[0]+mar[2])
+  .attr("height", nPix+mar[1]+mar[3]);
+
+  var sg = svg.append("g")
+  .attr("transform", "translate("
+  + mar[0] + ","
+  + mar[1] + ")");
+
+d3.csv("/euclidean.csv",function(data){
+    var x_min=data[0].x,
+      x_max=data[0].x,
+      y_max = data[0].y,
+      y_min = data[0].y;
+  data.forEach(function(d){
+    d.x = +d.x;
+    d.y = +d.y;
+    if (d.x>x_max){
+      x_max = d.x;
+    }
+    if (d.y>y_max){
+      y_max = d.y;
+    }
+    if (d.y<y_min){
+      y_min = d.y;
+    }
+    if (d.x<x_min){
+      x_min = d.x;
+    }
+
+  });
+  var x_scale = d3.scale.linear().range([0,nPix]).domain([x_min,x_max]);
+  var y_scale = d3.scale.linear().range([nPix,0]).domain([y_min,y_max]);
+
+  var xAxis = d3.svg.axis().scale(x_scale).orient("bottom").ticks(4);
+  svg.append("g").call(xAxis)
+  .attr("class", "axis")  //Assign "axis" class
+  .attr("transform","translate(" + mar[0] + "," + (nPix+mar[1])  + ")");
+  
+  var yAxis = d3.svg.axis().scale(y_scale).orient("left").ticks(4);
+  svg.append("g").call(yAxis)
+  .attr("class", "axis")  //Assign "axis" class
+  .attr("transform","translate(" + mar[0] + "," + (mar[3])  + ")");
+
+  var dots = sg.selectAll(".datapoint")
+  .data(data).enter()
+  .append("circle")
+  .attr("class", "datapoint")  
+  .attr("cx",function(d) {return x_scale(d.x);})
+  .attr("cy",function(d) {return y_scale(d.y);})
+  .attr("id",function(d,i) {return "point" + i})
+  .attr("r",1);
+
+
+})
+</script>
+</script>
+</body></html>

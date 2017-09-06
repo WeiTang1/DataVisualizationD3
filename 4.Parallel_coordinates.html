@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html><head>
+<title>Parallel Coordinates</title>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+</head><body><header>
+
+<style type="text/css">
+svg {
+  font: 10px sans-serif;
+}
+
+.PCline path {
+  fill: none;
+  stroke: steelblue;
+}
+
+
+.PCaxis line,
+.PCaxis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.PCaxis text {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+</style>
+</header>
+
+
+<script>
+
+// svg parameters
+var PC_margin = {top: 30, right: 10, bottom: 10, left: 10},
+    PC_width = 960 - PC_margin.left - PC_margin.right,
+    PC_height = 500 - PC_margin.top - PC_margin.bottom;
+
+var PC_x = d3.scale.ordinal().rangePoints([0,PC_width],1),
+    PC_y = {},
+    dragging = {};
+
+var PC_line = d3.svg.line(),
+    PC_axis = d3.svg.axis().orient("left"),
+    PC_line;
+
+var PC_svg = d3.select("body").append("svg")
+    .attr("width", PC_width + PC_margin.left + PC_margin.right)
+    .attr("height", PC_height + PC_margin.top + PC_margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + PC_margin.left + "," + PC_margin.top + ")");
+// loading data
+d3.csv("/result.csv",function(data){
+    PC_indexs = ["PHONE","ZIPCODE","CAMIS","SCORE","VIOLATION CODE","CRITICAL FLAG","GRADE","BUILDING","CUISINE DESCRIPTION","BORO"];
+    PC_x.domain(PC_indexs);
+  //  create scale for each axis
+    PC_indexs.forEach(function(index){
+      data.forEach(function(d){
+        d[index] = +d[index];
+      });
+      var value = function(d){return d[index];};
+      domain = [d3.min(data,value),d3.max(data,value)],
+      range = [PC_height ,0];
+      PC_y[index] = d3.scale.linear().domain(domain).range(range);
+    });
+
+    PC_line = PC_svg.append("g")
+                  .attr("class","PCline")
+                  .selectAll("path")
+                  .data(data)
+                  .enter()
+                  .append("path")
+                  .attr("d",path)
+;
+
+
+    var g = PC_svg.selectAll(".indexs")
+              .data(PC_indexs)
+              .enter().append("g")
+              .attr("class","indexs")
+              .attr("transform",function(d){ return "translate("+PC_x(d)+")";});
+
+    g.append("g")
+      .attr("class","PCaxis")
+      .each(function(d){d3.select(this).call(PC_axis.scale(PC_y[d]));})
+      .append("text")
+      .style("text-anchor","middle")
+      .attr("y",-9)
+      .text(function(d) {return d;});
+});
+// create path
+function path(d) {
+  return PC_line(PC_indexs.map(function(p) { return [PC_x(p), PC_y[p](d[p])]; }));
+};
+
+
+
+</script>
+
+</body></html>
