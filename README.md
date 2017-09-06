@@ -5,3 +5,6 @@ Data Visualization Project using D3.
 
 *.py ---- Contains data normalization code for filter data.
 
+Video demo for individual graphics: https://youtu.be/YRuGmzXbbu8
+
+Video demo for graphics interaction: https://youtu.be/YEiMktRh4bw
